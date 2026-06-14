@@ -1,13 +1,14 @@
 using Marketplace.Orders.Application;
 using Marketplace.Orders.Application.Implementation;
-using Marketplace.Orders.Infrastructure;
 using Marketplace.Orders.Infrastructure.Helpers;
 using Marketplace.Orders.Infrastructure.Implementation;
-using Marketplace.Orders.Migrations.Migrations; // важно!
+using Marketplace.Orders.Migrations.Migrations;
+using Marketplace.Orders.Application.Validators;
+using FluentValidation;
+using Marketplace.Orders.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------- Конфигурация ----------
 var ordersConnectionString = builder.Configuration.GetConnectionString("OrdersDb")
                              ?? throw new InvalidOperationException("OrdersDb connection string is missing.");
 var productsGrpcAddress = builder.Configuration["GrpcServices:Products"]
@@ -31,7 +32,11 @@ services.AddScoped<IProductGrpcClient, ProductGrpcClient>();
 
 services.AddScoped<OrderService>();
 
+services.AddValidatorsFromAssemblyContaining<CreateOrderDtoValidator>();
+
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 if (app.Environment.IsDevelopment())
 {

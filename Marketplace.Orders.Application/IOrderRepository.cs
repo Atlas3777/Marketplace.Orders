@@ -6,4 +6,6 @@ public interface IOrderRepository
 {
     Task AddAsync(Order order);
     Task<Order?> GetByIdAsync(Guid id);
+    Task<IEnumerable<Order>> GetPagedAsync(int offset, int limit);
+    Task UpdateStatusAsync(Guid id, OrderStatus status);
 }

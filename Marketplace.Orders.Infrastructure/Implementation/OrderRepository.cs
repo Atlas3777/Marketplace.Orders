@@ -21,8 +21,8 @@ public class OrderRepository : IOrderRepository
         using var transaction = connection.BeginTransaction();
 
         var orderSql = @"
-            INSERT INTO orders (id, userid, totalprice, createdat)
-            VALUES (@Id, @UserId, @TotalPrice, @CreatedAt)";
+            INSERT INTO orders (id, userid, totalprice, status, createdat)
+            VALUES (@Id, @UserId, @TotalPrice, @Status, @CreatedAt)";
 
         await connection.ExecuteAsync(orderSql, order, transaction);
 
@@ -39,7 +39,7 @@ public class OrderRepository : IOrderRepository
     {
         using var connection = _connectionFactory.GetConnection();
         var order = await connection.QuerySingleOrDefaultAsync<Order>(
-            "SELECT id, userid, totalprice, createdat FROM orders WHERE id = @Id", new { Id = id });
+            "SELECT id, userid, totalprice, status, createdat FROM orders WHERE id = @Id", new { Id = id });
 
         if (order == null) return null;
 
@@ -49,5 +49,22 @@ public class OrderRepository : IOrderRepository
 
         order.Items = items.ToList();
         return order;
+    }
+
+    public async Task<IEnumerable<Order>> GetPagedAsync(int offset, int limit)
+    {
+        using var connection = _connectionFactory.GetConnection();
+        var sql = "SELECT id, userid, totalprice, status, createdat FROM orders ORDER BY createdat DESC LIMIT @Limit OFFSET @Offset";
+        return await connection.QueryAsync<Order>(sql, new { Limit = limit, Offset = offset });
+    }
+
+    public async Task UpdateStatusAsync(Guid id, OrderStatus status)
+    {
+        using var connection = _connectionFactory.GetConnection();
+        var sql = "UPDATE orders SET status = @Status WHERE id = @Id";
+        var rowsAffected = await connection.ExecuteAsync(sql, new { Status = (int)status, Id = id });
+        
+        if (rowsAffected == 0)
+            throw new KeyNotFoundException($"Заказ с Id {id} не найден.");
     }
 }

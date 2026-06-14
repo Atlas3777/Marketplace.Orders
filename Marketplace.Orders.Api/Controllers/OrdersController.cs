@@ -1,32 +1,39 @@
 using Microsoft.AspNetCore.Mvc;
 using Marketplace.Orders.Application.DTOs;
 using Marketplace.Orders.Application.Implementation;
+using FluentValidation;
+using Marketplace.Orders.Api.Mappers;
 
 namespace Marketplace.Orders.Api.Controllers;
-
 [ApiController]
 [Route("api/v1/orders")]
 public class OrdersController : ControllerBase
 {
     private readonly OrderService _orderService;
+    private readonly IValidator<CreateOrderDto> _createValidator;
+    private readonly IValidator<GetOrdersDto> _getOrdersValidator;
 
-    public OrdersController(OrderService orderService)
+    public OrdersController(
+        OrderService orderService, 
+        IValidator<CreateOrderDto> createValidator,
+        IValidator<GetOrdersDto> getOrdersValidator)
     {
         _orderService = orderService;
+        _createValidator = createValidator;
+        _getOrdersValidator = getOrdersValidator;
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateOrder([FromBody] CreateOrderDto dto)
     {
-        try
+        var validationResult = await _createValidator.ValidateAsync(dto);
+        if (!validationResult.IsValid)
         {
-            var orderId = await _orderService.CreateOrderAsync(dto);
-            return Ok(new { orderId });
+            return BadRequest(validationResult.ToDictionary());
         }
-        catch (KeyNotFoundException ex)
-        {
-            return NotFound(ex.Message);
-        }
+
+        var orderId = await _orderService.CreateOrderAsync(dto);
+        return Ok(new { orderId });
     }
 
     [HttpGet("{id:guid}")]
@@ -35,6 +42,30 @@ public class OrdersController : ControllerBase
         var order = await _orderService.GetOrderAsync(id);
         if (order == null)
             return NotFound();
-        return Ok(order);
+            
+        return Ok(order.ToDto());
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> GetOrders([FromQuery] GetOrdersDto query)
+    {
+        var validationResult = await _getOrdersValidator.ValidateAsync(query);
+        if (!validationResult.IsValid)
+        {
+            return BadRequest(validationResult.ToDictionary());
+        }
+
+        var orders = await _orderService.GetOrdersPagedAsync(query.PageIndex, query.PageSize);
+
+        var ordersDtos = orders.Select(x => x.ToDto());
+        
+        return Ok(ordersDtos);
+    }
+
+    [HttpPatch("{id:guid}/status")]
+    public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateOrderStatusDto dto)
+    {
+        await _orderService.UpdateOrderStatusAsync(id, dto.Status);
+        return NoContent(); 
     }
 }

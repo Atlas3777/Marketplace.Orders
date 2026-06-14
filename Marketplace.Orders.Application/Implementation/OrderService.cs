@@ -13,6 +13,7 @@ public class OrderService(
         {
             Id = Guid.NewGuid(),
             UserId = dto.UserId,
+            Status = OrderStatus.Created,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -47,5 +48,21 @@ public class OrderService(
     public async Task<Order?> GetOrderAsync(Guid orderId)
     {
         return await orderRepository.GetByIdAsync(orderId);
+    }
+
+    public async Task<IEnumerable<Order>> GetOrdersPagedAsync(int pageIndex, int pageSize)
+    {
+        if (pageIndex < 0) pageIndex = 0;
+        if (pageSize <= 0) pageSize = 10;
+
+        int offset = pageIndex * pageSize;
+        int limit = pageSize;
+
+        return await orderRepository.GetPagedAsync(offset, limit);
+    }
+
+    public async Task UpdateOrderStatusAsync(Guid orderId, OrderStatus status)
+    {
+        await orderRepository.UpdateStatusAsync(orderId, status);
     }
 }
