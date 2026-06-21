@@ -39,16 +39,12 @@ public class OrderRepository : IOrderRepository
     {
         using var connection = _connectionFactory.GetConnection();
         var order = await connection.QuerySingleOrDefaultAsync<Order>(
-            "SELECT id, userid, totalprice, status, createdat " +
-            "FROM orders" +
-            "WHERE id = @Id", new { Id = id });
+            "SELECT id, userid, totalprice, status, createdat FROM orders WHERE id = @Id", new { Id = id });
 
         if (order == null) return null;
 
         var items = await connection.QueryAsync<OrderItem>(
-            "SELECT id, orderid, productid, quantity, price " +
-            "FROM order_items " +
-            "WHERE orderid = @OrderId",
+            "SELECT id, orderid, productid, quantity, price FROM order_items WHERE orderid = @OrderId",
             new { OrderId = id });
 
         order.Items = items.ToList();
@@ -58,11 +54,7 @@ public class OrderRepository : IOrderRepository
     public async Task<IEnumerable<Order>> GetPagedAsync(Guid userId, int offset, int limit)
     {
         using var connection = _connectionFactory.GetConnection();
-        var sql = "SELECT id, userid, totalprice, status, createdat " +
-                  "FROM orders " +
-                  "WHERE userid = @UserId " +
-                  "ORDER BY createdat DESC " +
-                  "LIMIT @Limit OFFSET @Offset";
+        var sql = "SELECT id, userid, totalprice, status, createdat FROM orders WHERE userid = @UserId ORDER BY createdat DESC LIMIT @Limit OFFSET @Offset";
         return await connection.QueryAsync<Order>(sql, new { Limit = limit, Offset = offset });
     }
 
