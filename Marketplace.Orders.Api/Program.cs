@@ -22,6 +22,14 @@ var productsGrpcAddress = builder.Configuration["GrpcServices:Products"]
 
 var services = builder.Services;
 
+services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
+
+
 services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",

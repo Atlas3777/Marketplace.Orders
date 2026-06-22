@@ -54,9 +54,40 @@ public class OrderRepository : IOrderRepository
     public async Task<IEnumerable<Order>> GetPagedAsync(Guid userId, int offset, int limit)
     {
         using var connection = _connectionFactory.GetConnection();
-        var sql = "SELECT id, userid, totalprice, status, createdat FROM orders WHERE userid = @UserId ORDER BY createdat DESC LIMIT @Limit OFFSET @Offset";
+
+        var ordersSql = @"
+        SELECT id, userid, totalprice, status, createdat 
+        FROM orders 
+        WHERE userid = @UserId 
+        ORDER BY createdat DESC 
+        LIMIT @Limit OFFSET @Offset";
+
+        var orders = (await connection.QueryAsync<Order>(
+            ordersSql, 
+            new { UserId = userId, Limit = limit, Offset = offset }
+        )).ToList();
+
+        if (orders.Count == 0)
+            return orders;
+
+        var orderIds = orders.Select(o => o.Id).ToArray();
+        var itemsSql = @"
+        SELECT id, orderid, productid, quantity, price 
+        FROM order_items 
+        WHERE orderid = ANY(@OrderIds)";
     
-        return await connection.QueryAsync<Order>(sql, new { UserId = userId, Limit = limit, Offset = offset });
+        var items = await connection.QueryAsync<OrderItem>(
+            itemsSql, 
+            new { OrderIds = orderIds }
+        );
+
+        var itemsLookup = items.ToLookup(i => i.OrderId);
+        foreach (var order in orders)
+        {
+            order.Items = itemsLookup[order.Id].ToList();
+        }
+
+        return orders;
     }
 
     public async Task UpdateStatusAsync(Guid id, OrderStatus status)
