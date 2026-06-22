@@ -1,4 +1,5 @@
 using Marketplace.Orders.Application;
+using Marketplace.Orders.Application.Implementation;
 using Microsoft.Extensions.Caching.Distributed;
 using Marketplace.Orders.Infrastructure.Helpers;
 using Marketplace.Orders.Infrastructure.Implementation;
@@ -44,13 +45,11 @@ services.AddSwaggerGen();
 
 services.AddSingleton<IPostgresConnectionFactory>(
     new PostgresConnectionFactory(ordersConnectionString));
-services.AddScoped<IOrderRepository, OrderRepository>();
 
 services.AddGrpcClient<Marketplace.Products.Api.Protos.ProductServiceGrpc.ProductServiceGrpcClient>(o =>
 {
     o.Address = new Uri(productsGrpcAddress);
 });
-
 services.AddScoped<IProductGrpcClient, ProductGrpcClient>();
 
 services.AddScoped<OrderRepository>();
@@ -59,6 +58,8 @@ services.AddScoped<IOrderRepository>(provider =>
         provider.GetRequiredService<OrderRepository>(),
         provider.GetRequiredService<IDistributedCache>()
     ));
+
+services.AddScoped<OrderService>();
 
 services.AddValidatorsFromAssemblyContaining<CreateOrderDtoValidator>();
 
