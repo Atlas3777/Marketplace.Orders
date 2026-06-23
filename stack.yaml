@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   orders-api:
-    image: fluffycocount/ozoz-orders:latest
+    image: atlas3777/marketplace-orders-api:latest
     networks:
       - traefik_proxy
     environment:
