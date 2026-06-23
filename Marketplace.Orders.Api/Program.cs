@@ -18,17 +18,9 @@ var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
                             ?? "localhost:6380";
 
 var productsGrpcAddress = builder.Configuration["GrpcServices:Products"]
-                          ?? "http://localhost:5107";
+                          ?? "http://ozoz-products_ozoz-products-api:8080";
 
 var services = builder.Services;
-
-services.AddControllers()
-    .AddJsonOptions(options =>
-    {
-        options.JsonSerializerOptions.Converters.Add(
-            new System.Text.Json.Serialization.JsonStringEnumConverter());
-    });
-
 
 services.AddCors(options =>
 {
@@ -40,6 +32,13 @@ services.AddCors(options =>
                 .AllowAnyHeader();
         });
 });
+
+services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
 services.AddStackExchangeRedisCache(options =>
 {
