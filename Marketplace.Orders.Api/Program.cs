@@ -20,15 +20,7 @@ var redisConnectionString = builder.Configuration.GetConnectionString("Redis")
 var productsGrpcAddress = builder.Configuration["GrpcServices:Products"]
                           ?? "http://localhost:5107";
 
-
-HttpClientHandler clientHandler = new HttpClientHandler();
-clientHandler.ServerCertificateCustomValidationCallback = (sender, cert, chain, sslPolicyErrors) => { return true; };
-
-HttpClient client = new HttpClient(clientHandler);
-
-
 var services = builder.Services;
-
 
 services.AddControllers()
     .AddJsonOptions(options =>
@@ -63,18 +55,10 @@ services.AddSwaggerGen();
 services.AddSingleton<IPostgresConnectionFactory>(
     new PostgresConnectionFactory(ordersConnectionString));
 
-
 services.AddGrpcClient<Marketplace.Products.Api.Protos.ProductServiceGrpc.ProductServiceGrpcClient>(o =>
-    {
-        o.Address = new Uri(productsGrpcAddress);
-    })
-    .ConfigurePrimaryHttpMessageHandler(() =>
-    {
-        var handler = new HttpClientHandler();
-        handler.ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator;
-        return handler;
-    });
-
+{
+    o.Address = new Uri(productsGrpcAddress);
+});
 services.AddScoped<IProductGrpcClient, ProductGrpcClient>();
 
 services.AddScoped<OrderRepository>();
