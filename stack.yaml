@@ -27,14 +27,14 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: marketplace-orders-db
     networks:
-      - orders_network
+      - traefik_proxy
     volumes:
       - orders_pgdata:/var/lib/postgresql/data
 
   orders-redis:
     image: redis:7-alpine
     networks:
-      - orders_network
+      - traefik_proxy
     volumes:
       - orders_redisdata:/data
 
